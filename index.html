@@ -1,0 +1,153 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Futari Radio Avatar</title>
+    <link rel="stylesheet" href="styles.css?v=3" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <main class="stage-panel" aria-label="radio avatar stage">
+        <section class="stage" id="stage">
+          <div class="side-rail side-rail-left"></div>
+          <div class="side-rail side-rail-right"></div>
+
+          <div class="scene" id="scene">
+            <img class="studio-base" src="assets/radio-background-clean.png?v=2" alt="" />
+            <div class="person left-torso" id="bodyLeft" aria-hidden="true">
+              <img src="assets/cutout-left-torso.png?v=2" alt="" />
+            </div>
+            <div class="person left-hands" aria-hidden="true">
+              <img src="assets/cutout-left-hands.png?v=2" alt="" />
+            </div>
+            <div class="person left-lap" aria-hidden="true">
+              <img src="assets/cutout-left-lap.png?v=2" alt="" />
+            </div>
+            <div class="person right-torso" id="bodyRight" aria-hidden="true">
+              <img src="assets/cutout-right-torso.png?v=2" alt="" />
+            </div>
+            <div class="person right-hands" aria-hidden="true">
+              <img src="assets/cutout-right-hands.png?v=2" alt="" />
+            </div>
+            <div class="person right-lap" aria-hidden="true">
+              <img src="assets/cutout-right-lap.png?v=2" alt="" />
+            </div>
+            <div class="person head-left" id="headLeft" aria-hidden="true">
+              <img src="assets/cutout-head-left.png?v=2" alt="" />
+            </div>
+            <div class="person head-right" id="headRight" aria-hidden="true">
+              <img src="assets/cutout-head-right.png?v=2" alt="" />
+            </div>
+            <div class="mouth mouth-left" id="mouthLeft" aria-hidden="true"></div>
+            <div class="mouth mouth-right" id="mouthRight" aria-hidden="true"></div>
+            <div class="signal signal-left" id="signalLeft" aria-hidden="true"></div>
+            <div class="signal signal-right" id="signalRight" aria-hidden="true"></div>
+          </div>
+
+          <canvas class="waveform" id="waveform" width="1280" height="180" aria-hidden="true"></canvas>
+          <div class="onair">
+            <span class="onair-dot"></span>
+            <span id="statusText">standby</span>
+          </div>
+        </section>
+      </main>
+
+      <aside class="control-panel" id="controlPanel">
+        <header class="panel-header">
+          <p class="eyebrow">Futari Radio</p>
+          <h1>Avatar Studio</h1>
+        </header>
+
+        <div class="control-grid">
+          <button class="primary-button" id="micButton" type="button">
+            <span class="button-icon" aria-hidden="true">●</span>
+            マイク
+          </button>
+          <label class="file-button">
+            <input id="audioFile" type="file" accept="audio/*" />
+            <span class="button-icon" aria-hidden="true">▣</span>
+            音源
+          </label>
+          <button class="ghost-button" id="demoButton" type="button">
+            <span class="button-icon" aria-hidden="true">▶</span>
+            デモ
+          </button>
+          <button class="ghost-button" id="stageOnlyButton" type="button">
+            <span class="button-icon" aria-hidden="true">□</span>
+            配信
+          </button>
+        </div>
+
+        <section class="recording-card" aria-label="live recording">
+          <button class="record-button" id="recordButton" type="button">
+            <span class="button-icon" aria-hidden="true">●</span>
+            <span id="recordButtonText">録音開始</span>
+          </button>
+          <output class="record-timer" id="recordTimer">00:00</output>
+          <a class="download-link disabled" id="recordDownload">録音ファイル</a>
+        </section>
+
+        <section class="remote-card" aria-label="remote recording">
+          <div class="remote-head">
+            <span>遠隔</span>
+            <output id="remoteStatus">未接続</output>
+          </div>
+          <div class="remote-actions">
+            <button class="ghost-button" id="hostOfferButton" type="button">招待</button>
+            <button class="ghost-button" id="guestAnswerButton" type="button">回答</button>
+            <button class="ghost-button" id="applyRemoteButton" type="button">適用</button>
+            <button class="ghost-button" id="hangupButton" type="button">切断</button>
+          </div>
+          <label class="signal-field">
+            <span>送るコード</span>
+            <textarea id="localSignal" readonly rows="3"></textarea>
+          </label>
+          <button class="ghost-button copy-button" id="copySignalButton" type="button">コピー</button>
+          <label class="signal-field">
+            <span>相手コード</span>
+            <textarea id="peerSignal" rows="3"></textarea>
+          </label>
+          <audio class="remote-audio" id="remoteAudio" controls autoplay playsinline></audio>
+        </section>
+
+        <audio class="audio-player" id="audioPlayer" controls></audio>
+
+        <section class="device-card" aria-label="input devices">
+          <label>
+            <span>左</span>
+            <select id="leftDevice"></select>
+          </label>
+          <label>
+            <span>右</span>
+            <select id="rightDevice"></select>
+          </label>
+        </section>
+
+        <section class="segmented" aria-label="speaker mode">
+          <button class="active" data-mode="auto" type="button">自動</button>
+          <button data-mode="left" type="button">左</button>
+          <button data-mode="right" type="button">右</button>
+          <button data-mode="duet" type="button">二人</button>
+        </section>
+
+        <section class="slider-stack" aria-label="motion controls">
+          <label>
+            <span>感度</span>
+            <input id="sensitivity" type="range" min="0.6" max="3" step="0.05" value="1.55" />
+          </label>
+          <label>
+            <span>動き</span>
+            <input id="motion" type="range" min="0.35" max="2.2" step="0.05" value="1" />
+          </label>
+          <label>
+            <span>余韻</span>
+            <input id="decay" type="range" min="0.72" max="0.96" step="0.01" value="0.86" />
+          </label>
+        </section>
+      </aside>
+    </div>
+
+    <script src="app.js?v=3" type="module"></script>
+  </body>
+</html>
