@@ -28,12 +28,12 @@ const css = readText("styles.css");
 const js = readText("app.js");
 
 html = html.replace(
-  /<link rel="stylesheet" href="styles\.css\?v=4" \/>/,
+  /<link rel="stylesheet" href="styles\.css\?v=\d+" \/>/,
   `<style>\n${css}\n</style>`,
 );
 
 html = html.replace(
-  /<script src="app\.js\?v=4" type="module"><\/script>/,
+  /<script src="app\.js\?v=\d+" type="module"><\/script>/,
   `<script type="module">\n${js.replaceAll("</script>", "<\\/script>")}\n</script>`,
 );
 

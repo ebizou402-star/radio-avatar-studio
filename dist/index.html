@@ -893,6 +893,32 @@ function setRemoteStatus(text) {
   els.remoteStatus.textContent = text;
 }
 
+function statusForMediaError(error) {
+  const name = error?.name || "";
+
+  if (name === "NotAllowedError" || name === "SecurityError" || name === "PermissionDeniedError") {
+    return "マイク許可";
+  }
+
+  if (name === "NotFoundError" || name === "DevicesNotFoundError") {
+    return "マイクなし";
+  }
+
+  if (name === "NotReadableError" || name === "TrackStartError") {
+    return "マイク使用中";
+  }
+
+  if (name === "NotSupportedError") {
+    return "非対応";
+  }
+
+  if (name === "InvalidCharacterError" || name === "SyntaxError") {
+    return "コード確認";
+  }
+
+  return "失敗";
+}
+
 function ensureAudioContext() {
   if (!state.audioContext) {
     state.audioContext = new AudioContext();
@@ -957,6 +983,10 @@ async function populateDevices() {
 }
 
 async function getInputStream(deviceId) {
+  if (!navigator.mediaDevices?.getUserMedia) {
+    throw new DOMException("Microphone input is not available in this browser.", "NotSupportedError");
+  }
+
   const audio = {
     autoGainControl: true,
     echoCancellation: true,
@@ -972,6 +1002,24 @@ function stopStream(stream) {
 
 function hasLiveAudio(stream) {
   return stream?.getAudioTracks().some((track) => track.readyState === "live") || false;
+}
+
+function findReusableAudioTransceiver(peer) {
+  return peer.getTransceivers?.().find((transceiver) => {
+    return transceiver.receiver?.track?.kind === "audio" && !transceiver.sender?.track;
+  });
+}
+
+async function canUseMicWithoutPrompt() {
+  if (hasLiveAudio(state.streamLeft)) return true;
+
+  try {
+    if (!navigator.permissions?.query) return false;
+    const permission = await navigator.permissions.query({ name: "microphone" });
+    return permission.state === "granted";
+  } catch {
+    return false;
+  }
 }
 
 function disconnectRecordNodes() {
@@ -1096,9 +1144,29 @@ function createPeer(role) {
   return peer;
 }
 
-async function addLocalAudio(peer) {
-  const stream = await ensureLocalMic();
-  stream.getAudioTracks().forEach((track) => peer.addTrack(track, stream));
+async function addLocalAudio(peer, { optional = false, transceiver = null } = {}) {
+  try {
+    const stream = await ensureLocalMic();
+    const tracks = stream.getAudioTracks();
+    let reusableTransceiver = transceiver || findReusableAudioTransceiver(peer);
+
+    for (const track of tracks) {
+      if (reusableTransceiver && !reusableTransceiver.sender.track) {
+        await reusableTransceiver.sender.replaceTrack(track);
+        reusableTransceiver.direction = "sendrecv";
+        reusableTransceiver = null;
+      } else {
+        peer.addTrack(track, stream);
+      }
+    }
+
+    return true;
+  } catch (error) {
+    if (!optional) throw error;
+    console.warn(error);
+    setStatus(statusForMediaError(error));
+    return false;
+  }
 }
 
 async function attachRemoteStream(stream) {
@@ -1123,8 +1191,13 @@ async function createHostOffer() {
   await ensureAudioContext();
   state.demo = false;
   const peer = createPeer("host");
-  await addLocalAudio(peer);
-  const offer = await peer.createOffer({ offerToReceiveAudio: true });
+  const audioTransceiver = peer.addTransceiver("audio", { direction: "recvonly" });
+  if (await canUseMicWithoutPrompt()) {
+    await addLocalAudio(peer, { optional: true, transceiver: audioTransceiver });
+  } else {
+    setStatus("mic待ち");
+  }
+  const offer = await peer.createOffer();
   await peer.setLocalDescription(offer);
   await waitForIceGatheringComplete(peer);
   els.localSignal.value = encodeSignal(peer.localDescription);
@@ -1137,8 +1210,8 @@ async function createGuestAnswer() {
   state.demo = false;
   const offer = decodeSignal(els.peerSignal.value);
   const peer = createPeer("guest");
-  await addLocalAudio(peer);
   await peer.setRemoteDescription(offer);
+  await addLocalAudio(peer);
   const answer = await peer.createAnswer();
   await peer.setLocalDescription(answer);
   await waitForIceGatheringComplete(peer);
@@ -1574,8 +1647,9 @@ els.recordButton.addEventListener("click", () => {
 function runRemoteAction(action) {
   action().catch((error) => {
     console.error(error);
-    setRemoteStatus("失敗");
-    setStatus("blocked");
+    const status = statusForMediaError(error);
+    setRemoteStatus(status);
+    setStatus(status === "マイク許可" ? "mic許可" : "blocked");
   });
 }
 
