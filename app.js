@@ -452,7 +452,7 @@ function finishRecordingBlob(blob, extension) {
 
   state.recordingUrl = URL.createObjectURL(blob);
   els.recordDownload.href = state.recordingUrl;
-  els.recordDownload.download = `futari-radio-${new Date().toISOString().replace(/[:.]/g, "-")}.${extension}`;
+  els.recordDownload.download = `ebizo-talk-${new Date().toISOString().replace(/[:.]/g, "-")}.${extension}`;
   els.recordDownload.classList.remove("disabled");
   els.recordDownload.textContent = `録音ファイル ${formatDuration(performance.now() - state.recordingStartedAt)}`;
   state.recorder = null;
