@@ -5,10 +5,15 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>EBIZO TALK Avatar Studio</title>
     <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; base-uri 'none'; object-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data:; media-src 'self' blob: data:; connect-src 'self' stun:; worker-src 'none'; form-action 'none'; frame-src 'none'; child-src 'none'; upgrade-insecure-requests"
+    />
+    <meta name="referrer" content="no-referrer" />
+    <meta
       name="description"
       content="EBIZO TALKの二人収録用、音声連動アバタースタジオ。"
     />
-    <link rel="stylesheet" href="styles.css?v=5" />
+    <link rel="stylesheet" href="styles.css?v=6" />
   </head>
   <body>
     <div class="app-shell">
@@ -97,6 +102,7 @@
             <span>遠隔</span>
             <output id="remoteStatus">未接続</output>
           </div>
+          <output class="security-status" id="securityStatus">安全確認中</output>
           <div class="remote-actions">
             <button class="ghost-button" id="hostOfferButton" type="button">招待</button>
             <button class="ghost-button" id="guestAnswerButton" type="button">回答</button>
@@ -105,12 +111,28 @@
           </div>
           <label class="signal-field">
             <span>送るコード</span>
-            <textarea id="localSignal" readonly rows="3"></textarea>
+            <textarea
+              id="localSignal"
+              readonly
+              rows="3"
+              autocomplete="off"
+              autocapitalize="off"
+              autocorrect="off"
+              spellcheck="false"
+            ></textarea>
           </label>
           <button class="ghost-button copy-button" id="copySignalButton" type="button">コピー</button>
           <label class="signal-field">
             <span>相手コード</span>
-            <textarea id="peerSignal" rows="3"></textarea>
+            <textarea
+              id="peerSignal"
+              rows="3"
+              maxlength="140000"
+              autocomplete="off"
+              autocapitalize="off"
+              autocorrect="off"
+              spellcheck="false"
+            ></textarea>
           </label>
           <audio class="remote-audio" id="remoteAudio" controls autoplay playsinline></audio>
         </section>
@@ -152,6 +174,6 @@
       </aside>
     </div>
 
-    <script src="app.js?v=5" type="module"></script>
+    <script src="app.js?v=6" type="module"></script>
   </body>
 </html>

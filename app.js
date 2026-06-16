@@ -25,6 +25,7 @@ const els = {
   localSignal: document.querySelector("#localSignal"),
   peerSignal: document.querySelector("#peerSignal"),
   remoteStatus: document.querySelector("#remoteStatus"),
+  securityStatus: document.querySelector("#securityStatus"),
   remoteAudio: document.querySelector("#remoteAudio"),
   demoButton: document.querySelector("#demoButton"),
   stageOnlyButton: document.querySelector("#stageOnlyButton"),
@@ -72,6 +73,18 @@ const state = {
 };
 
 const analyserData = new Uint8Array(1024);
+const maxSignalLength = 140000;
+const safePublicHostPatterns = [/^[a-z0-9-]+\.github\.io$/i];
+const localHosts = new Set(["", "localhost", "127.0.0.1", "::1"]);
+const blockedTunnelHostSuffixes = [
+  "lhr.life",
+  "localhost.run",
+  "loca.lt",
+  "trycloudflare.com",
+  "ngrok-free.app",
+  "ngrok.io",
+  "serveo.net",
+];
 
 function setStatus(text) {
   els.statusText.textContent = text;
@@ -81,11 +94,70 @@ function setRemoteStatus(text) {
   els.remoteStatus.textContent = text;
 }
 
+function hostMatches(hostname, suffix) {
+  return hostname === suffix || hostname.endsWith(`.${suffix}`);
+}
+
+function getSecurityProfile() {
+  const hostname = location.hostname.toLowerCase();
+  const protocol = location.protocol;
+  const isLocal = protocol === "file:" || localHosts.has(hostname);
+  const isSafePublic = protocol === "https:" && safePublicHostPatterns.some((pattern) => pattern.test(hostname));
+  const isBlockedTunnel = blockedTunnelHostSuffixes.some((suffix) => hostMatches(hostname, suffix));
+
+  return {
+    isBlockedTunnel,
+    isLocal,
+    isSafePublic,
+    canUseRemote: isLocal || isSafePublic,
+  };
+}
+
+function setSecurityStatus(text, level) {
+  body.dataset.security = level;
+  els.securityStatus.textContent = text;
+}
+
+function applySecurityPolicy() {
+  const profile = getSecurityProfile();
+  const remoteBlocked = !profile.canUseRemote || profile.isBlockedTunnel;
+  const remoteButtons = [els.hostOfferButton, els.guestAnswerButton, els.applyRemoteButton, els.copySignalButton];
+
+  remoteButtons.forEach((button) => {
+    button.disabled = remoteBlocked;
+    button.title = remoteBlocked ? "安全確認済みのURLで開いてください" : "";
+  });
+
+  if (profile.isBlockedTunnel) {
+    setSecurityStatus("一時URLブロック", "blocked");
+  } else if (profile.isSafePublic) {
+    setSecurityStatus("安全URL", "safe");
+  } else if (profile.isLocal) {
+    setSecurityStatus("ローカル", "local");
+  } else {
+    setSecurityStatus("未確認URL", "blocked");
+  }
+}
+
+function assertRemoteOriginAllowed() {
+  const profile = getSecurityProfile();
+
+  if (profile.isBlockedTunnel) {
+    throw new DOMException("Temporary tunnel URLs are blocked for remote recording.", "SecurityError");
+  }
+
+  if (!profile.canUseRemote) {
+    throw new DOMException("Remote recording requires a trusted local URL or GitHub Pages URL.", "SecurityError");
+  }
+}
+
 function statusForMediaError(error) {
   const name = error?.name || "";
 
   if (name === "NotAllowedError" || name === "SecurityError" || name === "PermissionDeniedError") {
-    return "マイク許可";
+    return error?.message?.includes("Temporary tunnel") || error?.message?.includes("trusted local")
+      ? "URL確認"
+      : "マイク許可";
   }
 
   if (name === "NotFoundError" || name === "DevicesNotFoundError") {
@@ -276,9 +348,20 @@ function encodeSignal(data) {
 
 function decodeSignal(value) {
   const compact = value.replace(/\s/g, "");
+
+  if (!compact || compact.length > maxSignalLength || !/^[a-z0-9+/=]+$/i.test(compact)) {
+    throw new DOMException("Invalid remote signal.", "InvalidCharacterError");
+  }
+
   const binary = atob(compact);
   const bytes = Uint8Array.from(binary, (character) => character.charCodeAt(0));
-  return JSON.parse(new TextDecoder().decode(bytes));
+  const signal = JSON.parse(new TextDecoder().decode(bytes));
+
+  if (!signal || !["offer", "answer"].includes(signal.type) || typeof signal.sdp !== "string") {
+    throw new DOMException("Invalid remote signal.", "InvalidCharacterError");
+  }
+
+  return signal;
 }
 
 function waitForIceGatheringComplete(peer) {
@@ -299,6 +382,8 @@ function waitForIceGatheringComplete(peer) {
 }
 
 function createPeer(role) {
+  assertRemoteOriginAllowed();
+
   if (!window.RTCPeerConnection) {
     throw new Error("WebRTC is not available in this browser.");
   }
@@ -376,6 +461,7 @@ async function attachRemoteStream(stream) {
 }
 
 async function createHostOffer() {
+  assertRemoteOriginAllowed();
   await ensureAudioContext();
   state.demo = false;
   const peer = createPeer("host");
@@ -394,6 +480,7 @@ async function createHostOffer() {
 }
 
 async function createGuestAnswer() {
+  assertRemoteOriginAllowed();
   await ensureAudioContext();
   state.demo = false;
   const offer = decodeSignal(els.peerSignal.value);
@@ -408,6 +495,8 @@ async function createGuestAnswer() {
 }
 
 async function applyRemoteSignal() {
+  assertRemoteOriginAllowed();
+
   if (!state.peer) {
     setRemoteStatus("招待なし");
     return;
@@ -436,6 +525,8 @@ function hangUpRemote(updateStatus = true) {
   els.remoteAudio.srcObject = null;
   state.inputMode = "local";
   if (updateStatus) {
+    els.localSignal.value = "";
+    els.peerSignal.value = "";
     setRemoteStatus("未接続");
     setStatus("standby");
   }
@@ -938,5 +1029,6 @@ if (new URLSearchParams(location.search).has("guest")) {
   setRemoteStatus("携帯待機");
 }
 
+applySecurityPolicy();
 populateDevices().catch(() => {});
 requestAnimationFrame(render);
