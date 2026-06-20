@@ -364,6 +364,11 @@ function decodeSignal(value) {
   return signal;
 }
 
+function clearRemoteSignals() {
+  els.localSignal.value = "";
+  els.peerSignal.value = "";
+}
+
 function waitForIceGatheringComplete(peer) {
   if (peer.iceGatheringState === "complete") return Promise.resolve();
 
@@ -525,8 +530,7 @@ function hangUpRemote(updateStatus = true) {
   els.remoteAudio.srcObject = null;
   state.inputMode = "local";
   if (updateStatus) {
-    els.localSignal.value = "";
-    els.peerSignal.value = "";
+    clearRemoteSignals();
     setRemoteStatus("未接続");
     setStatus("standby");
   }
@@ -619,6 +623,7 @@ function finishRecordingBlob(blob, extension) {
   els.recordDownload.download = `ebizo-talk-${new Date().toISOString().replace(/[:.]/g, "-")}.${extension}`;
   els.recordDownload.classList.remove("disabled");
   els.recordDownload.textContent = `録音ファイル ${formatDuration(performance.now() - state.recordingStartedAt)}`;
+  clearRemoteSignals();
   state.recorder = null;
   state.recordingActive = false;
   setRecordingUi(false);

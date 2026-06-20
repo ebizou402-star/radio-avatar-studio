@@ -6,7 +6,7 @@
     <title>EBIZO TALK Avatar Studio</title>
     <meta
       http-equiv="Content-Security-Policy"
-      content="default-src 'self'; base-uri 'none'; object-src 'none'; script-src 'sha256-IXcy2NxzboutesUDruhWbVJQmIJTL9w2ILYTQBebBkg='; style-src 'sha256-jA4kvEDVGf8D9SeAJEyd9ttxdq6IZezYi0Rn9k9rbUs='; img-src 'self' data:; media-src 'self' blob: data:; connect-src 'self' stun:; worker-src 'none'; form-action 'none'; frame-src 'none'; child-src 'none'; upgrade-insecure-requests"
+      content="default-src 'self'; base-uri 'none'; object-src 'none'; script-src 'sha256-bf+EnNCMoZvf8saUUw66OwTOK/rbx/kcjWl3NqEotr8='; style-src 'sha256-jA4kvEDVGf8D9SeAJEyd9ttxdq6IZezYi0Rn9k9rbUs='; img-src 'self' data:; media-src 'self' blob: data:; connect-src 'self' stun:; worker-src 'none'; form-action 'none'; frame-src 'none'; child-src 'none'; upgrade-insecure-requests"
     />
     <meta name="referrer" content="no-referrer" />
     <meta
@@ -1226,6 +1226,11 @@ function decodeSignal(value) {
   return signal;
 }
 
+function clearRemoteSignals() {
+  els.localSignal.value = "";
+  els.peerSignal.value = "";
+}
+
 function waitForIceGatheringComplete(peer) {
   if (peer.iceGatheringState === "complete") return Promise.resolve();
 
@@ -1387,8 +1392,7 @@ function hangUpRemote(updateStatus = true) {
   els.remoteAudio.srcObject = null;
   state.inputMode = "local";
   if (updateStatus) {
-    els.localSignal.value = "";
-    els.peerSignal.value = "";
+    clearRemoteSignals();
     setRemoteStatus("未接続");
     setStatus("standby");
   }
@@ -1481,6 +1485,7 @@ function finishRecordingBlob(blob, extension) {
   els.recordDownload.download = `ebizo-talk-${new Date().toISOString().replace(/[:.]/g, "-")}.${extension}`;
   els.recordDownload.classList.remove("disabled");
   els.recordDownload.textContent = `録音ファイル ${formatDuration(performance.now() - state.recordingStartedAt)}`;
+  clearRemoteSignals();
   state.recorder = null;
   state.recordingActive = false;
   setRecordingUi(false);

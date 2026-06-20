@@ -24,7 +24,7 @@ Do not use temporary tunnel domains such as `lhr.life`, `localhost.run`, `loca.l
 - The browser microphone permission, only after a user action.
 - WebRTC for live cohost audio.
 - A free public STUN server for connection setup. STUN helps peers find a route; it is not an audio storage service.
-- Manual invite/answer codes. Treat those codes as private connection data and send them only to the cohost through a trusted channel.
+- Manual invite/answer codes. Treat those codes as private connection data and send them only to the cohost through a trusted channel. The app clears both code fields after a recording file is created and when the call is disconnected.
 
 ## Browser Hardening
 
@@ -38,5 +38,5 @@ The single-file build in `dist/index.html` uses hash-based CSP entries for its i
 2. Use the `github.io` HTTPS URL, not a temporary tunnel URL.
 3. Keep the repository free of passwords, tokens, private documents, or unreleased personal images.
 4. Before recording, confirm the app shows `安全URL` in the remote panel.
-5. Delete invite/answer codes from chats after the session.
+5. The app clears its invite/answer fields automatically after recording or disconnecting. Delete copies sent through chat after the session.
 6. Stop recording and press `切断` when finished.
