@@ -13,7 +13,7 @@
       name="description"
       content="EBIZO TALKの二人収録用、音声連動アバタースタジオ。"
     />
-    <link rel="stylesheet" href="styles.css?v=14" />
+    <link rel="stylesheet" href="styles.css?v=15" />
   </head>
   <body>
     <div class="app-shell">
@@ -98,6 +98,11 @@
           rel="noopener noreferrer"
           hidden
         >HTTPS版でマイクを開く</a>
+
+        <div class="mic-recovery" id="micRecovery" role="status" aria-live="polite" hidden>
+          <output id="micRecoveryText"></output>
+          <button class="ghost-button" id="copyMicUrlButton" type="button">URLコピー</button>
+        </div>
 
         <section class="recording-card" aria-label="live recording">
           <button class="record-button" id="recordButton" type="button">
@@ -185,6 +190,6 @@
       </aside>
     </div>
 
-    <script src="app.js?v=10" type="module"></script>
+    <script src="app.js?v=11" type="module"></script>
   </body>
 </html>

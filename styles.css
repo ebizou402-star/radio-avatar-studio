@@ -426,6 +426,32 @@ h1 {
   display: none;
 }
 
+.mic-recovery {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border: 1px solid rgba(238, 97, 72, 0.42);
+  background: rgba(238, 97, 72, 0.1);
+}
+
+.mic-recovery output {
+  color: var(--ink-muted);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.mic-recovery .ghost-button {
+  min-height: 36px;
+  padding: 0 12px;
+  white-space: nowrap;
+}
+
+.mic-recovery[hidden] {
+  display: none;
+}
+
 .primary-button,
 .ghost-button,
 .file-button {

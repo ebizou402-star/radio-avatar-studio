@@ -14,6 +14,9 @@ const els = {
   signalRight: document.querySelector("#signalRight"),
   micButton: document.querySelector("#micButton"),
   secureMicLink: document.querySelector("#secureMicLink"),
+  micRecovery: document.querySelector("#micRecovery"),
+  micRecoveryText: document.querySelector("#micRecoveryText"),
+  copyMicUrlButton: document.querySelector("#copyMicUrlButton"),
   recordButton: document.querySelector("#recordButton"),
   recordButtonText: document.querySelector("#recordButtonText"),
   recordTimer: document.querySelector("#recordTimer"),
@@ -78,6 +81,7 @@ const state = {
 const analyserTimeData = new Uint8Array(1024);
 const analyserFrequencyData = new Uint8Array(512);
 const maxSignalLength = 140000;
+const canonicalMicUrl = "https://ebizou402-star.github.io/radio-avatar-studio/?test=recording";
 const safePublicHostPatterns = [/^[a-z0-9-]+\.github\.io$/i];
 const localHosts = new Set(["", "localhost", "127.0.0.1", "::1"]);
 const blockedTunnelHostSuffixes = [
@@ -157,6 +161,7 @@ function assertRemoteOriginAllowed() {
 
 function statusForMediaError(error) {
   const name = error?.name || "";
+  const message = error?.message || "";
   const isFileMicrophoneError = location.protocol === "file:"
     && ["NotAllowedError", "SecurityError", "PermissionDeniedError", "NotSupportedError"].includes(name);
 
@@ -164,8 +169,12 @@ function statusForMediaError(error) {
     return "HTTPS必要";
   }
 
+  if (name === "SecurityError" && message.includes("embedding browser policy")) {
+    return "ブラウザ制限";
+  }
+
   if (name === "NotAllowedError" || name === "SecurityError" || name === "PermissionDeniedError") {
-    return error?.message?.includes("Temporary tunnel") || error?.message?.includes("trusted local")
+    return message.includes("Temporary tunnel") || message.includes("trusted local")
       ? "URL確認"
       : "マイク許可";
   }
@@ -189,11 +198,53 @@ function statusForMediaError(error) {
   return "失敗";
 }
 
-function reportMediaError(error, remote = false) {
+function clearMicRecovery() {
+  els.micRecovery.hidden = true;
+  els.micRecoveryText.textContent = "";
+  els.secureMicLink.hidden = true;
+}
+
+async function microphonePermissionState() {
+  try {
+    if (!navigator.permissions?.query) return "unknown";
+    const permission = await navigator.permissions.query({ name: "microphone" });
+    return permission.state;
+  } catch {
+    return "unknown";
+  }
+}
+
+async function reportMediaError(error, remote = false) {
   const status = statusForMediaError(error);
+  let recoveryText = "";
 
   if (status === "HTTPS必要") {
     els.secureMicLink.hidden = false;
+    recoveryText = "マイクはHTTPS版またはlocalhostで使用してください。";
+  }
+
+  if (status === "ブラウザ制限") {
+    recoveryText = "この表示環境はマイク入力を許可していません。URLをSafariまたはChromeで開いてください。";
+  }
+
+  if (status === "マイク許可") {
+    const permission = await microphonePermissionState();
+    recoveryText = permission === "denied"
+      ? "ブラウザまたはMacの設定でマイクを許可し、もう一度マイクを押してください。"
+      : "許可後も失敗する場合は、URLをSafariまたはChromeで開いてください。";
+  }
+
+  if (status === "マイク使用中") {
+    recoveryText = "ほかの通話・録音アプリを閉じて、もう一度マイクを押してください。";
+  }
+
+  if (status === "非対応") {
+    recoveryText = "SafariまたはChromeの最新版でURLを開いてください。";
+  }
+
+  if (recoveryText) {
+    els.micRecoveryText.textContent = recoveryText;
+    els.micRecovery.hidden = false;
   }
 
   setStatus(status);
@@ -208,6 +259,11 @@ function ensureAudioContext() {
     return state.audioContext.resume();
   }
   return Promise.resolve();
+}
+
+function microphonePolicyAllows() {
+  const policy = document.permissionsPolicy || document.featurePolicy;
+  return !policy?.allowsFeature || policy.allowsFeature("microphone");
 }
 
 function makeAnalyser() {
@@ -311,6 +367,10 @@ async function populateDevices() {
 }
 
 async function getInputStream(deviceId) {
+  if (!microphonePolicyAllows()) {
+    throw new DOMException("Microphone access is blocked by the embedding browser policy.", "SecurityError");
+  }
+
   if (!navigator.mediaDevices?.getUserMedia) {
     const message = location.protocol === "file:"
       ? "Microphone access requires the HTTPS or localhost version."
@@ -384,8 +444,9 @@ async function ensureLocalMic(force = false) {
 }
 
 async function startMicrophones() {
+  setStatus("mic準備");
+  clearMicRecovery();
   await ensureAudioContext();
-  setStatus("mic");
   state.demo = false;
   hangUpRemote(false);
   state.inputMode = "local";
@@ -406,6 +467,7 @@ async function startMicrophones() {
   connectAnalyser(state.streamRight, "right");
 
   await populateDevices();
+  setStatus("mic");
 }
 
 function encodeSignal(data) {
@@ -1020,6 +1082,21 @@ els.micButton.addEventListener("click", () => {
     console.error(error);
     reportMediaError(error);
   });
+});
+
+els.copyMicUrlButton.addEventListener("click", () => {
+  if (!navigator.clipboard?.writeText) {
+    els.secureMicLink.hidden = false;
+    setStatus("URL表示");
+    return;
+  }
+
+  navigator.clipboard.writeText(canonicalMicUrl)
+    .then(() => setStatus("URLコピー済み"))
+    .catch(() => {
+      els.secureMicLink.hidden = false;
+      setStatus("URL表示");
+    });
 });
 
 els.recordButton.addEventListener("click", () => {

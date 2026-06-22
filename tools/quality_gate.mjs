@@ -43,6 +43,9 @@ const requiredIds = [
   "stage",
   "micButton",
   "secureMicLink",
+  "micRecovery",
+  "micRecoveryText",
+  "copyMicUrlButton",
   "recordButton",
   "hostOfferButton",
   "guestAnswerButton",
@@ -60,7 +63,10 @@ check(assetRefs.length > 0, "asset references found");
 check(assetRefs.every((file) => fs.existsSync(path.join(root, file))), "referenced assets exist");
 
 check(app.includes("navigator.mediaDevices?.getUserMedia"), "microphone input");
-check(app.includes("HTTPS必要") && app.includes("reportMediaError"), "microphone error guidance");
+check(app.includes("HTTPS必要") && app.includes("ブラウザ制限") && app.includes("reportMediaError"), "microphone error guidance");
+check(app.includes("microphonePolicyAllows") && app.includes("embedding browser policy"), "embedded microphone policy detection");
+check(app.includes('setStatus("mic準備")') && app.includes('setStatus("mic")'), "microphone startup states");
+check(app.includes("copyMicUrlButton") && app.includes("canonicalMicUrl"), "external browser recovery");
 
 const micHandler = app.match(/els\.micButton\.addEventListener[\s\S]*?(?=els\.recordButton\.addEventListener)/)?.[0] || "";
 const recordHandler = app.match(/els\.recordButton\.addEventListener[\s\S]*?(?=function runRemoteAction)/)?.[0] || "";
