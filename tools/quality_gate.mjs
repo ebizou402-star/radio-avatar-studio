@@ -66,6 +66,7 @@ check(app.includes("navigator.mediaDevices?.getUserMedia"), "microphone input");
 check(app.includes("HTTPS必要") && app.includes("ブラウザ制限") && app.includes("reportMediaError"), "microphone error guidance");
 check(app.includes("microphonePolicyAllows") && app.includes("embedding browser policy"), "embedded microphone policy detection");
 check(app.includes('setStatus("mic準備")') && app.includes('setStatus("mic")'), "microphone startup states");
+check(app.includes("Promise.race") && app.includes("direct browser interaction"), "audio startup timeout");
 check(app.includes("copyMicUrlButton") && app.includes("canonicalMicUrl"), "external browser recovery");
 
 const micHandler = app.match(/els\.micButton\.addEventListener[\s\S]*?(?=els\.recordButton\.addEventListener)/)?.[0] || "";

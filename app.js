@@ -169,7 +169,10 @@ function statusForMediaError(error) {
     return "HTTPS必要";
   }
 
-  if (name === "SecurityError" && message.includes("embedding browser policy")) {
+  if (
+    (name === "SecurityError" && message.includes("embedding browser policy"))
+    || (name === "NotAllowedError" && message.includes("direct browser interaction"))
+  ) {
     return "ブラウザ制限";
   }
 
@@ -251,14 +254,24 @@ async function reportMediaError(error, remote = false) {
   if (remote) setRemoteStatus(status);
 }
 
-function ensureAudioContext() {
+async function ensureAudioContext() {
   if (!state.audioContext) {
     state.audioContext = new AudioContext();
   }
+
   if (state.audioContext.state === "suspended") {
-    return state.audioContext.resume();
+    const resumed = await Promise.race([
+      state.audioContext.resume().then(() => true).catch(() => false),
+      new Promise((resolve) => setTimeout(() => resolve(false), 2200)),
+    ]);
+
+    if (!resumed || state.audioContext.state !== "running") {
+      throw new DOMException(
+        "Audio processing requires a direct browser interaction.",
+        "NotAllowedError",
+      );
+    }
   }
-  return Promise.resolve();
 }
 
 function microphonePolicyAllows() {

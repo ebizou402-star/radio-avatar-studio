@@ -6,7 +6,7 @@
     <title>EBIZO TALK Avatar Studio</title>
     <meta
       http-equiv="Content-Security-Policy"
-      content="default-src 'self'; base-uri 'none'; object-src 'none'; script-src 'sha256-pfvC20wcq3qa1aNDHHL/2XVKzryQC8plcBVkxY2AkmE='; style-src 'sha256-HtRFBcw83fCG6GzmJifDHnhoiuepM/cxTWrLmjXtVeQ='; img-src 'self' data:; media-src 'self' blob: data:; connect-src 'self' stun:; worker-src 'none'; form-action 'none'; frame-src 'none'; child-src 'none'; upgrade-insecure-requests"
+      content="default-src 'self'; base-uri 'none'; object-src 'none'; script-src 'sha256-kV5goO+muJ626mVeOUxZBtJYSlwgSe9fjGbEBeAcMLw='; style-src 'sha256-HtRFBcw83fCG6GzmJifDHnhoiuepM/cxTWrLmjXtVeQ='; img-src 'self' data:; media-src 'self' blob: data:; connect-src 'self' stun:; worker-src 'none'; form-action 'none'; frame-src 'none'; child-src 'none'; upgrade-insecure-requests"
     />
     <meta name="referrer" content="no-referrer" />
     <meta
@@ -1165,7 +1165,10 @@ function statusForMediaError(error) {
     return "HTTPS必要";
   }
 
-  if (name === "SecurityError" && message.includes("embedding browser policy")) {
+  if (
+    (name === "SecurityError" && message.includes("embedding browser policy"))
+    || (name === "NotAllowedError" && message.includes("direct browser interaction"))
+  ) {
     return "ブラウザ制限";
   }
 
@@ -1247,14 +1250,24 @@ async function reportMediaError(error, remote = false) {
   if (remote) setRemoteStatus(status);
 }
 
-function ensureAudioContext() {
+async function ensureAudioContext() {
   if (!state.audioContext) {
     state.audioContext = new AudioContext();
   }
+
   if (state.audioContext.state === "suspended") {
-    return state.audioContext.resume();
+    const resumed = await Promise.race([
+      state.audioContext.resume().then(() => true).catch(() => false),
+      new Promise((resolve) => setTimeout(() => resolve(false), 2200)),
+    ]);
+
+    if (!resumed || state.audioContext.state !== "running") {
+      throw new DOMException(
+        "Audio processing requires a direct browser interaction.",
+        "NotAllowedError",
+      );
+    }
   }
-  return Promise.resolve();
 }
 
 function microphonePolicyAllows() {
