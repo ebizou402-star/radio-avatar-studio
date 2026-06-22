@@ -45,6 +45,7 @@ const requiredIds = [
   "secureMicLink",
   "micRecovery",
   "micRecoveryText",
+  "micUrlField",
   "copyMicUrlButton",
   "recordButton",
   "hostOfferButton",
@@ -68,6 +69,8 @@ check(app.includes("microphonePolicyAllows") && app.includes("embedding browser 
 check(app.includes('setStatus("mic準備")') && app.includes('setStatus("mic")'), "microphone startup states");
 check(app.includes("Promise.race") && app.includes("direct browser interaction"), "audio startup timeout");
 check(app.includes("copyMicUrlButton") && app.includes("canonicalMicUrl"), "external browser recovery");
+check(app.includes("navigator.clipboard?.writeText") && app.includes('document.execCommand?.("copy")'), "URL copy fallback");
+check(app.includes('setStatus("URL選択済み")') && app.includes("setSelectionRange"), "manual URL copy fallback");
 
 const micHandler = app.match(/els\.micButton\.addEventListener[\s\S]*?(?=els\.recordButton\.addEventListener)/)?.[0] || "";
 const recordHandler = app.match(/els\.recordButton\.addEventListener[\s\S]*?(?=function runRemoteAction)/)?.[0] || "";

@@ -6,7 +6,7 @@
     <title>EBIZO TALK Avatar Studio</title>
     <meta
       http-equiv="Content-Security-Policy"
-      content="default-src 'self'; base-uri 'none'; object-src 'none'; script-src 'sha256-kV5goO+muJ626mVeOUxZBtJYSlwgSe9fjGbEBeAcMLw='; style-src 'sha256-HtRFBcw83fCG6GzmJifDHnhoiuepM/cxTWrLmjXtVeQ='; img-src 'self' data:; media-src 'self' blob: data:; connect-src 'self' stun:; worker-src 'none'; form-action 'none'; frame-src 'none'; child-src 'none'; upgrade-insecure-requests"
+      content="default-src 'self'; base-uri 'none'; object-src 'none'; script-src 'sha256-jeuKKFWjtEIEO28vAgRcBapiqKeDMFA+IfxbzS6JMFA='; style-src 'sha256-uobPFVelw2vSGQMLhOn2QjhW+QnSlNEWATSaGE21EjQ='; img-src 'self' data:; media-src 'self' blob: data:; connect-src 'self' stun:; worker-src 'none'; form-action 'none'; frame-src 'none'; child-src 'none'; upgrade-insecure-requests"
     />
     <meta name="referrer" content="no-referrer" />
     <meta
@@ -453,9 +453,27 @@ h1 {
 }
 
 .mic-recovery output {
+  grid-column: 1 / -1;
   color: var(--ink-muted);
   font-size: 12px;
   line-height: 1.45;
+}
+
+.mic-url-field {
+  min-width: 0;
+  min-height: 36px;
+  padding: 0 10px;
+  border: 1px solid rgba(247, 241, 233, 0.2);
+  border-radius: 6px;
+  background: rgba(8, 19, 21, 0.48);
+  color: var(--ink);
+  font: inherit;
+  font-size: 12px;
+}
+
+.mic-url-field:focus {
+  border-color: var(--teal);
+  outline: 2px solid rgba(85, 166, 161, 0.24);
 }
 
 .mic-recovery .ghost-button {
@@ -814,6 +832,14 @@ input[type="range"] {
   .control-grid {
     grid-template-columns: 1fr;
   }
+
+  .mic-recovery {
+    grid-template-columns: 1fr;
+  }
+
+  .mic-recovery .ghost-button {
+    width: 100%;
+  }
 }
 
 </style>
@@ -904,6 +930,15 @@ input[type="range"] {
 
         <div class="mic-recovery" id="micRecovery" role="status" aria-live="polite" hidden>
           <output id="micRecoveryText"></output>
+          <input
+            class="mic-url-field"
+            id="micUrlField"
+            type="text"
+            aria-label="Safari / Chrome用URL"
+            readonly
+            autocomplete="off"
+            spellcheck="false"
+          />
           <button class="ghost-button" id="copyMicUrlButton" type="button">URLコピー</button>
         </div>
 
@@ -1012,6 +1047,7 @@ const els = {
   secureMicLink: document.querySelector("#secureMicLink"),
   micRecovery: document.querySelector("#micRecovery"),
   micRecoveryText: document.querySelector("#micRecoveryText"),
+  micUrlField: document.querySelector("#micUrlField"),
   copyMicUrlButton: document.querySelector("#copyMicUrlButton"),
   recordButton: document.querySelector("#recordButton"),
   recordButtonText: document.querySelector("#recordButtonText"),
@@ -1078,6 +1114,7 @@ const analyserTimeData = new Uint8Array(1024);
 const analyserFrequencyData = new Uint8Array(512);
 const maxSignalLength = 140000;
 const canonicalMicUrl = "https://ebizou402-star.github.io/radio-avatar-studio/?test=recording";
+els.micUrlField.value = canonicalMicUrl;
 const safePublicHostPatterns = [/^[a-z0-9-]+\.github\.io$/i];
 const localHosts = new Set(["", "localhost", "127.0.0.1", "::1"]);
 const blockedTunnelHostSuffixes = [
@@ -2093,19 +2130,40 @@ els.micButton.addEventListener("click", () => {
   });
 });
 
-els.copyMicUrlButton.addEventListener("click", () => {
-  if (!navigator.clipboard?.writeText) {
-    els.secureMicLink.hidden = false;
-    setStatus("URL表示");
-    return;
+function selectMicUrl() {
+  els.micUrlField.focus();
+  els.micUrlField.select();
+  els.micUrlField.setSelectionRange(0, els.micUrlField.value.length);
+}
+
+async function copyMicUrl() {
+  selectMicUrl();
+
+  if (navigator.clipboard?.writeText) {
+    try {
+      await navigator.clipboard.writeText(canonicalMicUrl);
+      setStatus("URLコピー済み");
+      return;
+    } catch {
+      selectMicUrl();
+    }
   }
 
-  navigator.clipboard.writeText(canonicalMicUrl)
-    .then(() => setStatus("URLコピー済み"))
-    .catch(() => {
-      els.secureMicLink.hidden = false;
-      setStatus("URL表示");
-    });
+  try {
+    if (document.execCommand?.("copy")) {
+      setStatus("URLコピー済み");
+      return;
+    }
+  } catch {
+    // The selected URL remains available for the browser's native copy command.
+  }
+
+  selectMicUrl();
+  setStatus("URL選択済み");
+}
+
+els.copyMicUrlButton.addEventListener("click", () => {
+  copyMicUrl();
 });
 
 els.recordButton.addEventListener("click", () => {

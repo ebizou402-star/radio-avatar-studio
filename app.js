@@ -16,6 +16,7 @@ const els = {
   secureMicLink: document.querySelector("#secureMicLink"),
   micRecovery: document.querySelector("#micRecovery"),
   micRecoveryText: document.querySelector("#micRecoveryText"),
+  micUrlField: document.querySelector("#micUrlField"),
   copyMicUrlButton: document.querySelector("#copyMicUrlButton"),
   recordButton: document.querySelector("#recordButton"),
   recordButtonText: document.querySelector("#recordButtonText"),
@@ -82,6 +83,7 @@ const analyserTimeData = new Uint8Array(1024);
 const analyserFrequencyData = new Uint8Array(512);
 const maxSignalLength = 140000;
 const canonicalMicUrl = "https://ebizou402-star.github.io/radio-avatar-studio/?test=recording";
+els.micUrlField.value = canonicalMicUrl;
 const safePublicHostPatterns = [/^[a-z0-9-]+\.github\.io$/i];
 const localHosts = new Set(["", "localhost", "127.0.0.1", "::1"]);
 const blockedTunnelHostSuffixes = [
@@ -1097,19 +1099,40 @@ els.micButton.addEventListener("click", () => {
   });
 });
 
-els.copyMicUrlButton.addEventListener("click", () => {
-  if (!navigator.clipboard?.writeText) {
-    els.secureMicLink.hidden = false;
-    setStatus("URL表示");
-    return;
+function selectMicUrl() {
+  els.micUrlField.focus();
+  els.micUrlField.select();
+  els.micUrlField.setSelectionRange(0, els.micUrlField.value.length);
+}
+
+async function copyMicUrl() {
+  selectMicUrl();
+
+  if (navigator.clipboard?.writeText) {
+    try {
+      await navigator.clipboard.writeText(canonicalMicUrl);
+      setStatus("URLコピー済み");
+      return;
+    } catch {
+      selectMicUrl();
+    }
   }
 
-  navigator.clipboard.writeText(canonicalMicUrl)
-    .then(() => setStatus("URLコピー済み"))
-    .catch(() => {
-      els.secureMicLink.hidden = false;
-      setStatus("URL表示");
-    });
+  try {
+    if (document.execCommand?.("copy")) {
+      setStatus("URLコピー済み");
+      return;
+    }
+  } catch {
+    // The selected URL remains available for the browser's native copy command.
+  }
+
+  selectMicUrl();
+  setStatus("URL選択済み");
+}
+
+els.copyMicUrlButton.addEventListener("click", () => {
+  copyMicUrl();
 });
 
 els.recordButton.addEventListener("click", () => {
