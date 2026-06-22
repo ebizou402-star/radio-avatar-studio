@@ -13,7 +13,7 @@
       name="description"
       content="EBIZO TALKの二人収録用、音声連動アバタースタジオ。"
     />
-    <link rel="stylesheet" href="styles.css?v=6" />
+    <link rel="stylesheet" href="styles.css?v=14" />
   </head>
   <body>
     <div class="app-shell">
@@ -23,31 +23,33 @@
           <div class="side-rail side-rail-right"></div>
 
           <div class="scene" id="scene">
-            <img class="studio-base" src="assets/radio-background-clean.png?v=2" alt="" />
+            <img class="studio-base" src="assets/radio-background-hybrid.png?v=3" alt="" />
+            <img class="studio-table studio-table-legs" src="assets/table-microphone.png?v=3" alt="" aria-hidden="true" />
             <div class="person left-torso" id="bodyLeft" aria-hidden="true">
-              <img src="assets/cutout-left-torso.png?v=2" alt="" />
+              <img src="assets/cutout-left-torso.png?v=4" alt="" />
             </div>
             <div class="person left-hands" aria-hidden="true">
-              <img src="assets/cutout-left-hands.png?v=2" alt="" />
+              <img src="assets/cutout-left-hands.png?v=4" alt="" />
             </div>
             <div class="person left-lap" aria-hidden="true">
-              <img src="assets/cutout-left-lap.png?v=2" alt="" />
+              <img src="assets/cutout-left-lap.png?v=4" alt="" />
             </div>
             <div class="person right-torso" id="bodyRight" aria-hidden="true">
-              <img src="assets/cutout-right-torso.png?v=2" alt="" />
+              <img src="assets/cutout-right-torso.png?v=4" alt="" />
             </div>
             <div class="person right-hands" aria-hidden="true">
-              <img src="assets/cutout-right-hands.png?v=2" alt="" />
+              <img src="assets/cutout-right-hands.png?v=4" alt="" />
             </div>
             <div class="person right-lap" aria-hidden="true">
-              <img src="assets/cutout-right-lap.png?v=2" alt="" />
+              <img src="assets/cutout-right-lap.png?v=5" alt="" />
             </div>
             <div class="person head-left" id="headLeft" aria-hidden="true">
-              <img src="assets/cutout-head-left.png?v=2" alt="" />
+              <img src="assets/cutout-head-left.png?v=4" alt="" />
             </div>
             <div class="person head-right" id="headRight" aria-hidden="true">
-              <img src="assets/cutout-head-right.png?v=2" alt="" />
+              <img src="assets/cutout-head-right.png?v=4" alt="" />
             </div>
+            <img class="studio-table studio-table-top" src="assets/table-microphone.png?v=3" alt="" aria-hidden="true" />
             <div class="mouth mouth-left" id="mouthLeft" aria-hidden="true"></div>
             <div class="mouth mouth-right" id="mouthRight" aria-hidden="true"></div>
             <div class="signal signal-left" id="signalLeft" aria-hidden="true"></div>
@@ -87,6 +89,15 @@
             配信
           </button>
         </div>
+
+        <a
+          class="secure-mic-link"
+          id="secureMicLink"
+          href="https://ebizou402-star.github.io/radio-avatar-studio/"
+          target="_blank"
+          rel="noopener noreferrer"
+          hidden
+        >HTTPS版でマイクを開く</a>
 
         <section class="recording-card" aria-label="live recording">
           <button class="record-button" id="recordButton" type="button">
@@ -174,6 +185,6 @@
       </aside>
     </div>
 
-    <script src="app.js?v=7" type="module"></script>
+    <script src="app.js?v=10" type="module"></script>
   </body>
 </html>

@@ -11,6 +11,8 @@ https://ebizou402-star.github.io/radio-avatar-studio/?guest=1
 
 Do not use temporary tunnel domains such as `lhr.life`, `localhost.run`, `loca.lt`, `trycloudflare.com`, or `ngrok` for cohost invitations. The app blocks remote controls on those domains because security tools often flag them and because anyone with the temporary URL can open the page while the tunnel is active.
 
+Open the app through HTTPS or `localhost` when using the microphone. A `file://` preview can display the studio, but some browsers intentionally do not expose microphone input to local files. When that happens, the app shows `HTTPS必要` and offers the safe GitHub Pages URL instead of the ambiguous `blocked` status.
+
 ## What The App Does Not Do
 
 - No account login.

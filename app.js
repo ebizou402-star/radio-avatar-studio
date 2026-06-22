@@ -13,6 +13,7 @@ const els = {
   signalLeft: document.querySelector("#signalLeft"),
   signalRight: document.querySelector("#signalRight"),
   micButton: document.querySelector("#micButton"),
+  secureMicLink: document.querySelector("#secureMicLink"),
   recordButton: document.querySelector("#recordButton"),
   recordButtonText: document.querySelector("#recordButtonText"),
   recordTimer: document.querySelector("#recordTimer"),
@@ -69,10 +70,13 @@ const state = {
   rightLevel: 0,
   rawLeft: 0,
   rawRight: 0,
+  voiceLeft: { brightness: 0.35, emphasis: 0, energy: 0, lastSpectrumAt: 0, level: 0, pitch: 0.45 },
+  voiceRight: { brightness: 0.35, emphasis: 0, energy: 0, lastSpectrumAt: 0, level: 0, pitch: 0.45 },
   waveform: new Float32Array(96),
 };
 
-const analyserData = new Uint8Array(1024);
+const analyserTimeData = new Uint8Array(1024);
+const analyserFrequencyData = new Uint8Array(512);
 const maxSignalLength = 140000;
 const safePublicHostPatterns = [/^[a-z0-9-]+\.github\.io$/i];
 const localHosts = new Set(["", "localhost", "127.0.0.1", "::1"]);
@@ -153,6 +157,12 @@ function assertRemoteOriginAllowed() {
 
 function statusForMediaError(error) {
   const name = error?.name || "";
+  const isFileMicrophoneError = location.protocol === "file:"
+    && ["NotAllowedError", "SecurityError", "PermissionDeniedError", "NotSupportedError"].includes(name);
+
+  if (isFileMicrophoneError) {
+    return "HTTPS必要";
+  }
 
   if (name === "NotAllowedError" || name === "SecurityError" || name === "PermissionDeniedError") {
     return error?.message?.includes("Temporary tunnel") || error?.message?.includes("trusted local")
@@ -179,6 +189,17 @@ function statusForMediaError(error) {
   return "失敗";
 }
 
+function reportMediaError(error, remote = false) {
+  const status = statusForMediaError(error);
+
+  if (status === "HTTPS必要") {
+    els.secureMicLink.hidden = false;
+  }
+
+  setStatus(status);
+  if (remote) setRemoteStatus(status);
+}
+
 function ensureAudioContext() {
   if (!state.audioContext) {
     state.audioContext = new AudioContext();
@@ -196,19 +217,66 @@ function makeAnalyser() {
   return analyser;
 }
 
-function rmsFromAnalyser(analyser) {
-  if (!analyser) return 0;
-  analyser.getByteTimeDomainData(analyserData);
-
-  let sum = 0;
-  for (let i = 0; i < analyserData.length; i += 1) {
-    const centered = (analyserData[i] - 128) / 128;
-    sum += centered * centered;
+function analyseVoice(analyser, voice, now) {
+  if (!analyser) {
+    voice.level *= 0.86;
+    voice.energy *= 0.9;
+    voice.emphasis *= 0.82;
+    return 0;
   }
 
-  const rms = Math.sqrt(sum / analyserData.length);
+  analyser.getByteTimeDomainData(analyserTimeData);
+
+  let sum = 0;
+  let zeroCrossings = 0;
+  let previousSign = 0;
+  for (let i = 0; i < analyserTimeData.length; i += 1) {
+    const centered = (analyserTimeData[i] - 128) / 128;
+    sum += centered * centered;
+
+    if (Math.abs(centered) > 0.025) {
+      const sign = centered > 0 ? 1 : -1;
+      if (previousSign && sign !== previousSign) zeroCrossings += 1;
+      previousSign = sign;
+    }
+  }
+
+  const rms = Math.sqrt(sum / analyserTimeData.length);
   const sensitivity = Number(els.sensitivity.value);
-  return clamp((rms - 0.015) * sensitivity * 7, 0, 1);
+  const level = clamp((rms - 0.015) * sensitivity * 7, 0, 1);
+  const attack = Math.max(0, level - voice.level);
+
+  if (rms > 0.025 && zeroCrossings > 2) {
+    const sampleRate = state.audioContext?.sampleRate || 48000;
+    const pitchHz = (zeroCrossings * sampleRate) / (2 * analyserTimeData.length);
+    const pitch = clamp((pitchHz - 85) / 265, 0, 1);
+    voice.pitch = voice.pitch * 0.82 + pitch * 0.18;
+  }
+
+  if (now - voice.lastSpectrumAt > 70) {
+    analyser.getByteFrequencyData(analyserFrequencyData);
+    let magnitude = 0;
+    let weighted = 0;
+    const end = Math.min(170, analyserFrequencyData.length);
+    for (let i = 2; i < end; i += 1) {
+      const value = analyserFrequencyData[i];
+      magnitude += value;
+      weighted += value * i;
+    }
+    if (magnitude > 0) {
+      const centroid = weighted / magnitude;
+      const brightness = clamp((centroid - 9) / 72, 0, 1);
+      voice.brightness = voice.brightness * 0.72 + brightness * 0.28;
+    }
+    voice.lastSpectrumAt = now;
+  }
+
+  const emphasisTarget = clamp(attack * 4.8 + level * voice.brightness * 0.28, 0, 1);
+  voice.emphasis = Math.max(voice.emphasis * 0.86, emphasisTarget);
+  const energyTarget = clamp(level * 0.72 + voice.emphasis * 0.48 + voice.brightness * level * 0.2, 0, 1);
+  voice.energy = voice.energy * 0.78 + energyTarget * 0.22;
+  voice.level = level;
+  return level;
 }
 
 function clamp(value, min, max) {
@@ -244,7 +312,10 @@ async function populateDevices() {
 
 async function getInputStream(deviceId) {
   if (!navigator.mediaDevices?.getUserMedia) {
-    throw new DOMException("Microphone input is not available in this browser.", "NotSupportedError");
+    const message = location.protocol === "file:"
+      ? "Microphone access requires the HTTPS or localhost version."
+      : "Microphone input is not available in this browser.";
+    throw new DOMException(message, "NotSupportedError");
   }
 
   const audio = {
@@ -832,10 +903,22 @@ function splitMonoLevel(level, now) {
 }
 
 function resolveLevels(now) {
-  if (state.demo) return demoLevels(now);
+  if (state.demo) {
+    const levels = demoLevels(now);
+    const demoPulse = (Math.sin(now / 210) + 1) / 2;
+    state.voiceLeft.brightness = 0.35 + demoPulse * 0.45;
+    state.voiceRight.brightness = 0.72 - demoPulse * 0.38;
+    state.voiceLeft.pitch = 0.38 + demoPulse * 0.4;
+    state.voiceRight.pitch = 0.7 - demoPulse * 0.32;
+    state.voiceLeft.emphasis = levels[0] * 0.75;
+    state.voiceRight.emphasis = levels[1] * 0.75;
+    state.voiceLeft.energy = levels[0];
+    state.voiceRight.energy = levels[1];
+    return levels;
+  }
 
-  const left = rmsFromAnalyser(state.analyserLeft);
-  const right = rmsFromAnalyser(state.analyserRight);
+  const left = analyseVoice(state.analyserLeft, state.voiceLeft, now);
+  const right = analyseVoice(state.analyserRight, state.voiceRight, now);
   state.rawLeft = left;
   state.rawRight = right;
 
@@ -894,11 +977,35 @@ function render(now) {
 
   const leftTalk = clamp(state.leftLevel * motion, 0, 1);
   const rightTalk = clamp(state.rightLevel * motion, 0, 1);
+  const leftEnergy = clamp(state.voiceLeft.energy * motion, 0, 1);
+  const rightEnergy = clamp(state.voiceRight.energy * motion, 0, 1);
+  const leftEmphasis = clamp(state.voiceLeft.emphasis * motion, 0, 1);
+  const rightEmphasis = clamp(state.voiceRight.emphasis * motion, 0, 1);
+  const leftTone = clamp((state.voiceLeft.pitch - 0.5) * 2 * leftTalk, -1, 1);
+  const rightTone = clamp((state.voiceRight.pitch - 0.5) * 2 * rightTalk, -1, 1);
+  const leftSway = clamp(Math.sin(now / 520) * leftTalk * 0.55 + leftTone * 0.8, -1, 1);
+  const rightSway = clamp(Math.sin(now / 490 + 1.4) * rightTalk * 0.55 + rightTone * 0.8, -1, 1);
+  const leftNod = clamp(((Math.sin(now / 210) + 1) / 2) * leftEnergy * 0.65 + leftEmphasis * 0.5, 0, 1);
+  const rightNod = clamp(((Math.sin(now / 230 + 0.8) + 1) / 2) * rightEnergy * 0.65 + rightEmphasis * 0.5, 0, 1);
+  const leftGesture = clamp(((Math.sin(now / 165) + 1) / 2) * leftEnergy * 0.6 + leftEmphasis * 0.8, 0, 1);
+  const rightGesture = clamp(((Math.sin(now / 180 + 1.1) + 1) / 2) * rightEnergy * 0.6 + rightEmphasis * 0.8, 0, 1);
 
   root.style.setProperty("--talk-left", leftTalk.toFixed(3));
   root.style.setProperty("--talk-right", rightTalk.toFixed(3));
-  els.mouthLeft.style.opacity = String(0.18 + leftTalk * 0.8);
-  els.mouthRight.style.opacity = String(0.18 + rightTalk * 0.8);
+  root.style.setProperty("--energy-left", leftEnergy.toFixed(3));
+  root.style.setProperty("--energy-right", rightEnergy.toFixed(3));
+  root.style.setProperty("--emphasis-left", leftEmphasis.toFixed(3));
+  root.style.setProperty("--emphasis-right", rightEmphasis.toFixed(3));
+  root.style.setProperty("--tone-left", leftTone.toFixed(3));
+  root.style.setProperty("--tone-right", rightTone.toFixed(3));
+  root.style.setProperty("--sway-left", leftSway.toFixed(3));
+  root.style.setProperty("--sway-right", rightSway.toFixed(3));
+  root.style.setProperty("--nod-left", leftNod.toFixed(3));
+  root.style.setProperty("--nod-right", rightNod.toFixed(3));
+  root.style.setProperty("--gesture-left", leftGesture.toFixed(3));
+  root.style.setProperty("--gesture-right", rightGesture.toFixed(3));
+  els.mouthLeft.style.opacity = String(0.05 + leftTalk * 0.42 + leftEnergy * 0.2 + leftEmphasis * 0.16);
+  els.mouthRight.style.opacity = String(0.05 + rightTalk * 0.42 + rightEnergy * 0.2 + rightEmphasis * 0.16);
   els.signalLeft.style.opacity = String(leftTalk * 0.85);
   els.signalRight.style.opacity = String(rightTalk * 0.85);
   els.signalLeft.style.transform = `translate(-50%, -50%) scale(${0.7 + leftTalk * 0.9})`;
@@ -911,7 +1018,7 @@ function render(now) {
 els.micButton.addEventListener("click", () => {
   startMicrophones().catch((error) => {
     console.error(error);
-    setStatus("blocked");
+    reportMediaError(error);
   });
 });
 
@@ -924,16 +1031,14 @@ els.recordButton.addEventListener("click", () => {
   startRecording().catch((error) => {
     console.error(error);
     abortRecording();
-    setStatus("blocked");
+    reportMediaError(error);
   });
 });
 
 function runRemoteAction(action) {
   action().catch((error) => {
     console.error(error);
-    const status = statusForMediaError(error);
-    setRemoteStatus(status);
-    setStatus(status === "マイク許可" ? "mic許可" : "blocked");
+    reportMediaError(error, true);
   });
 }
 
