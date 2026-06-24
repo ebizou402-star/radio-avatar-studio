@@ -2,6 +2,8 @@
 
 Spotifyで配信中の `EBIZO TALK` 向けに作った、音声連動の二人収録アバター画面です。ブラウザで開いて、マイクまたは音源ファイルの音量に合わせて左右のキャラクターが反応します。
 
+ホスト版・ゲスト版の手順は [EBIZO TALK 取扱説明書 PDF](output/pdf/EBIZO_TALK_Manual_JA.pdf) にまとめています。
+
 ## 起動
 
 ```bash
@@ -87,5 +89,9 @@ node tools/quality_gate.mjs
 ```
 
 役割の詳細は [AGENTS.md](AGENTS.md)、検査項目は [QUALITY-GATE.md](QUALITY-GATE.md) を確認してください。
+
+## マネタイズ部門
+
+無料で始める90日収益化計画、スポンサー商品、KPI管理は [monetization/DEPARTMENT.md](monetization/DEPARTMENT.md) から確認できます。課金サービス、決済接続、外部への営業送信は、ユーザー承認後にだけ実行します。
 
 より本格的にするなら、次はキャラクターを背景から透明切り抜きして、口・頭・手をパーツ分けした版にすると自然な口パクや首振りまで作れます。
