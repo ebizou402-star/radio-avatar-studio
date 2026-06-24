@@ -45,6 +45,21 @@ const els = {
   modeButtons: Array.from(document.querySelectorAll("[data-mode]")),
 };
 
+function createVoiceState(pitch = 0.45) {
+  return {
+    brightness: 0.35,
+    emphasis: 0,
+    energy: 0,
+    floor: 0.012,
+    lastSpectrumAt: 0,
+    level: 0,
+    mouthOpen: 0,
+    pitch,
+    smile: 0,
+    syllable: 0,
+  };
+}
+
 const state = {
   audioContext: null,
   analyserLeft: null,
@@ -74,8 +89,8 @@ const state = {
   rightLevel: 0,
   rawLeft: 0,
   rawRight: 0,
-  voiceLeft: { brightness: 0.35, emphasis: 0, energy: 0, lastSpectrumAt: 0, level: 0, pitch: 0.45 },
-  voiceRight: { brightness: 0.35, emphasis: 0, energy: 0, lastSpectrumAt: 0, level: 0, pitch: 0.45 },
+  voiceLeft: createVoiceState(0.45),
+  voiceRight: createVoiceState(0.5),
   waveform: new Float32Array(96),
 };
 
@@ -293,16 +308,21 @@ function analyseVoice(analyser, voice, now) {
     voice.level *= 0.86;
     voice.energy *= 0.9;
     voice.emphasis *= 0.82;
+    voice.mouthOpen *= 0.84;
+    voice.smile *= 0.88;
+    voice.syllable *= 0.68;
     return 0;
   }
 
   analyser.getByteTimeDomainData(analyserTimeData);
 
   let sum = 0;
+  let peak = 0;
   let zeroCrossings = 0;
   let previousSign = 0;
   for (let i = 0; i < analyserTimeData.length; i += 1) {
     const centered = (analyserTimeData[i] - 128) / 128;
+    peak = Math.max(peak, Math.abs(centered));
     sum += centered * centered;
 
     if (Math.abs(centered) > 0.025) {
@@ -314,8 +334,12 @@ function analyseVoice(analyser, voice, now) {
 
   const rms = Math.sqrt(sum / analyserTimeData.length);
   const sensitivity = Number(els.sensitivity.value);
-  const level = clamp((rms - 0.015) * sensitivity * 7, 0, 1);
+  const floorTarget = rms < voice.floor + 0.008 ? rms : Math.min(voice.floor + 0.0005, 0.024);
+  voice.floor = clamp(voice.floor * 0.986 + floorTarget * 0.014, 0.006, 0.04);
+  const level = clamp((rms - voice.floor - 0.004) * sensitivity * 9.2, 0, 1);
   const attack = Math.max(0, level - voice.level);
+  const movement = Math.abs(level - voice.level);
+  const plosive = clamp((peak - rms * 2.6) * 1.6, 0, 1);
 
   if (rms > 0.025 && zeroCrossings > 2) {
     const sampleRate = state.audioContext?.sampleRate || 48000;
@@ -342,10 +366,16 @@ function analyseVoice(analyser, voice, now) {
     voice.lastSpectrumAt = now;
   }
 
+  const syllableTarget = clamp(attack * 5.2 + Math.max(0, movement - 0.035) * 2.8 + plosive * 0.45, 0, 1);
+  voice.syllable = Math.max(voice.syllable * 0.64, syllableTarget);
   const emphasisTarget = clamp(attack * 4.8 + level * voice.brightness * 0.28, 0, 1);
   voice.emphasis = Math.max(voice.emphasis * 0.86, emphasisTarget);
   const energyTarget = clamp(level * 0.72 + voice.emphasis * 0.48 + voice.brightness * level * 0.2, 0, 1);
   voice.energy = voice.energy * 0.78 + energyTarget * 0.22;
+  const mouthTarget = clamp(level * 0.78 + voice.emphasis * 0.34 + voice.syllable * 0.46, 0, 1);
+  voice.mouthOpen = voice.mouthOpen * 0.54 + mouthTarget * 0.46;
+  const smileTarget = clamp((voice.brightness - 0.5) * 1.55 + (voice.pitch - 0.54) * 0.72, 0, 1) * clamp(level * 1.25, 0, 1);
+  voice.smile = voice.smile * 0.84 + smileTarget * 0.16;
   voice.level = level;
   return level;
 }
@@ -991,6 +1021,12 @@ function resolveLevels(now) {
     state.voiceRight.emphasis = levels[1] * 0.75;
     state.voiceLeft.energy = levels[0];
     state.voiceRight.energy = levels[1];
+    state.voiceLeft.mouthOpen = levels[0] * 0.9;
+    state.voiceRight.mouthOpen = levels[1] * 0.9;
+    state.voiceLeft.smile = clamp((state.voiceLeft.brightness - 0.48) * levels[0] * 1.4, 0, 1);
+    state.voiceRight.smile = clamp((state.voiceRight.brightness - 0.48) * levels[1] * 1.4, 0, 1);
+    state.voiceLeft.syllable = Math.max(state.voiceLeft.syllable * 0.66, levels[0] * 0.72);
+    state.voiceRight.syllable = Math.max(state.voiceRight.syllable * 0.66, levels[1] * 0.72);
     return levels;
   }
 
@@ -1058,14 +1094,20 @@ function render(now) {
   const rightEnergy = clamp(state.voiceRight.energy * motion, 0, 1);
   const leftEmphasis = clamp(state.voiceLeft.emphasis * motion, 0, 1);
   const rightEmphasis = clamp(state.voiceRight.emphasis * motion, 0, 1);
+  const leftMouthOpen = clamp(state.voiceLeft.mouthOpen * motion, 0, 1);
+  const rightMouthOpen = clamp(state.voiceRight.mouthOpen * motion, 0, 1);
+  const leftSmile = clamp(state.voiceLeft.smile * motion, 0, 1);
+  const rightSmile = clamp(state.voiceRight.smile * motion, 0, 1);
+  const leftSyllable = clamp(state.voiceLeft.syllable * motion, 0, 1);
+  const rightSyllable = clamp(state.voiceRight.syllable * motion, 0, 1);
   const leftTone = clamp((state.voiceLeft.pitch - 0.5) * 2 * leftTalk, -1, 1);
   const rightTone = clamp((state.voiceRight.pitch - 0.5) * 2 * rightTalk, -1, 1);
   const leftSway = clamp(Math.sin(now / 520) * leftTalk * 0.55 + leftTone * 0.8, -1, 1);
   const rightSway = clamp(Math.sin(now / 490 + 1.4) * rightTalk * 0.55 + rightTone * 0.8, -1, 1);
-  const leftNod = clamp(((Math.sin(now / 210) + 1) / 2) * leftEnergy * 0.65 + leftEmphasis * 0.5, 0, 1);
-  const rightNod = clamp(((Math.sin(now / 230 + 0.8) + 1) / 2) * rightEnergy * 0.65 + rightEmphasis * 0.5, 0, 1);
-  const leftGesture = clamp(((Math.sin(now / 165) + 1) / 2) * leftEnergy * 0.6 + leftEmphasis * 0.8, 0, 1);
-  const rightGesture = clamp(((Math.sin(now / 180 + 1.1) + 1) / 2) * rightEnergy * 0.6 + rightEmphasis * 0.8, 0, 1);
+  const leftNod = clamp(((Math.sin(now / 210) + 1) / 2) * leftEnergy * 0.65 + leftEmphasis * 0.44 + leftSyllable * 0.26, 0, 1);
+  const rightNod = clamp(((Math.sin(now / 230 + 0.8) + 1) / 2) * rightEnergy * 0.65 + rightEmphasis * 0.44 + rightSyllable * 0.26, 0, 1);
+  const leftGesture = clamp(((Math.sin(now / 165) + 1) / 2) * leftEnergy * 0.54 + leftEmphasis * 0.72 + leftSyllable * 0.38, 0, 1);
+  const rightGesture = clamp(((Math.sin(now / 180 + 1.1) + 1) / 2) * rightEnergy * 0.54 + rightEmphasis * 0.72 + rightSyllable * 0.38, 0, 1);
 
   root.style.setProperty("--talk-left", leftTalk.toFixed(3));
   root.style.setProperty("--talk-right", rightTalk.toFixed(3));
@@ -1073,6 +1115,12 @@ function render(now) {
   root.style.setProperty("--energy-right", rightEnergy.toFixed(3));
   root.style.setProperty("--emphasis-left", leftEmphasis.toFixed(3));
   root.style.setProperty("--emphasis-right", rightEmphasis.toFixed(3));
+  root.style.setProperty("--mouth-open-left", leftMouthOpen.toFixed(3));
+  root.style.setProperty("--mouth-open-right", rightMouthOpen.toFixed(3));
+  root.style.setProperty("--smile-left", leftSmile.toFixed(3));
+  root.style.setProperty("--smile-right", rightSmile.toFixed(3));
+  root.style.setProperty("--syllable-left", leftSyllable.toFixed(3));
+  root.style.setProperty("--syllable-right", rightSyllable.toFixed(3));
   root.style.setProperty("--tone-left", leftTone.toFixed(3));
   root.style.setProperty("--tone-right", rightTone.toFixed(3));
   root.style.setProperty("--sway-left", leftSway.toFixed(3));
@@ -1081,8 +1129,8 @@ function render(now) {
   root.style.setProperty("--nod-right", rightNod.toFixed(3));
   root.style.setProperty("--gesture-left", leftGesture.toFixed(3));
   root.style.setProperty("--gesture-right", rightGesture.toFixed(3));
-  els.mouthLeft.style.opacity = String(0.05 + leftTalk * 0.42 + leftEnergy * 0.2 + leftEmphasis * 0.16);
-  els.mouthRight.style.opacity = String(0.05 + rightTalk * 0.42 + rightEnergy * 0.2 + rightEmphasis * 0.16);
+  els.mouthLeft.style.opacity = String(0.04 + leftMouthOpen * 0.5 + leftEnergy * 0.16 + leftSmile * 0.16);
+  els.mouthRight.style.opacity = String(0.04 + rightMouthOpen * 0.5 + rightEnergy * 0.16 + rightSmile * 0.16);
   els.signalLeft.style.opacity = String(leftTalk * 0.85);
   els.signalRight.style.opacity = String(rightTalk * 0.85);
   els.signalLeft.style.transform = `translate(-50%, -50%) scale(${0.7 + leftTalk * 0.9})`;

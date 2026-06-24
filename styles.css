@@ -14,6 +14,12 @@
   --energy-right: 0;
   --emphasis-left: 0;
   --emphasis-right: 0;
+  --mouth-open-left: 0;
+  --mouth-open-right: 0;
+  --smile-left: 0;
+  --smile-right: 0;
+  --syllable-left: 0;
+  --syllable-right: 0;
   --tone-left: 0;
   --tone-right: 0;
   --sway-left: 0;
@@ -163,11 +169,11 @@ button:disabled {
   transform-origin: 22% 59%;
   transform:
     translate3d(
-      calc(var(--talk-left) * -0.6px + var(--gesture-left) * -1.2px),
-      calc(var(--talk-left) * -0.8px + var(--gesture-left) * -1.8px + var(--emphasis-left) * -1px),
+      calc(var(--talk-left) * -0.6px + var(--gesture-left) * -1.2px + var(--syllable-left) * -0.7px),
+      calc(var(--talk-left) * -0.8px + var(--gesture-left) * -1.8px + var(--emphasis-left) * -1px + var(--syllable-left) * -0.8px),
       0
     )
-    rotate(calc(var(--talk-left) * -0.25deg + var(--gesture-left) * -1.5deg));
+    rotate(calc(var(--talk-left) * -0.25deg + var(--gesture-left) * -1.5deg + var(--syllable-left) * -0.45deg));
 }
 
 .left-lap {
@@ -198,11 +204,11 @@ button:disabled {
   transform-origin: 79% 59%;
   transform:
     translate3d(
-      calc(var(--talk-right) * 0.6px + var(--gesture-right) * 1.2px),
-      calc(var(--talk-right) * -0.8px + var(--gesture-right) * -1.8px + var(--emphasis-right) * -1px),
+      calc(var(--talk-right) * 0.6px + var(--gesture-right) * 1.2px + var(--syllable-right) * 0.7px),
+      calc(var(--talk-right) * -0.8px + var(--gesture-right) * -1.8px + var(--emphasis-right) * -1px + var(--syllable-right) * -0.8px),
       0
     )
-    rotate(calc(var(--talk-right) * 0.25deg + var(--gesture-right) * 1.5deg));
+    rotate(calc(var(--talk-right) * 0.25deg + var(--gesture-right) * 1.5deg + var(--syllable-right) * 0.45deg));
 }
 
 .right-lap {
@@ -216,11 +222,11 @@ button:disabled {
   transform-origin: 30% 43%;
   transform:
     translate3d(
-      calc(var(--talk) * -1px + var(--sway-left) * -1.2px + var(--tone-left) * -0.5px),
-      calc(var(--talk) * -1.2px + var(--emphasis-left) * -1px + var(--nod-left) * -0.8px),
+      calc(var(--talk) * -1px + var(--sway-left) * -1.2px + var(--tone-left) * -0.5px + var(--smile-left) * -0.35px),
+      calc(var(--talk) * -1.2px + var(--emphasis-left) * -1px + var(--nod-left) * -0.8px + var(--syllable-left) * -0.7px),
       0
     )
-    rotate(calc(var(--talk) * -0.35deg + var(--sway-left) * -0.8deg + var(--tone-left) * -0.6deg));
+    rotate(calc(var(--talk) * -0.35deg + var(--sway-left) * -0.8deg + var(--tone-left) * -0.6deg + var(--syllable-left) * -0.35deg));
   filter: none;
 }
 
@@ -229,11 +235,11 @@ button:disabled {
   transform-origin: 67% 42%;
   transform:
     translate3d(
-      calc(var(--talk) * 1px + var(--sway-right) * 1.2px + var(--tone-right) * 0.5px),
-      calc(var(--talk) * -1.2px + var(--emphasis-right) * -1px + var(--nod-right) * -0.8px),
+      calc(var(--talk) * 1px + var(--sway-right) * 1.2px + var(--tone-right) * 0.5px + var(--smile-right) * 0.35px),
+      calc(var(--talk) * -1.2px + var(--emphasis-right) * -1px + var(--nod-right) * -0.8px + var(--syllable-right) * -0.7px),
       0
     )
-    rotate(calc(var(--talk) * 0.35deg + var(--sway-right) * 0.8deg + var(--tone-right) * 0.6deg));
+    rotate(calc(var(--talk) * 0.35deg + var(--sway-right) * 0.8deg + var(--tone-right) * 0.6deg + var(--syllable-right) * 0.35deg));
   filter: none;
 }
 
@@ -255,12 +261,12 @@ button:disabled {
   transform:
     translate3d(
       calc(var(--talk-left) * -1px + var(--sway-left) * -1.2px + var(--tone-left) * -0.5px),
-      calc(var(--talk-left) * -1.2px + var(--emphasis-left) * -1px + var(--nod-left) * -0.8px),
+      calc(var(--talk-left) * -1.2px + var(--emphasis-left) * -1px + var(--nod-left) * -0.8px + var(--syllable-left) * -0.45px),
       0
     )
     rotate(calc(-10deg + var(--sway-left) * -0.8deg + var(--tone-left) * -0.6deg))
-    scaleX(calc(0.82 + var(--talk-left) * 0.25 + var(--emphasis-left) * 0.15))
-    scaleY(calc(1 + var(--talk-left) * 1.8 + var(--energy-left) * 0.7 + var(--emphasis-left) * 0.9));
+    scaleX(calc(0.8 + var(--talk-left) * 0.18 + var(--emphasis-left) * 0.12 + var(--smile-left) * 0.32))
+    scaleY(calc(1 + var(--mouth-open-left) * 2.35 + var(--energy-left) * 0.48 + var(--syllable-left) * 0.72));
 }
 
 .mouth-right {
@@ -270,12 +276,12 @@ button:disabled {
   transform:
     translate3d(
       calc(var(--talk-right) * 1px + var(--sway-right) * 1.2px + var(--tone-right) * 0.5px),
-      calc(var(--talk-right) * -1.2px + var(--emphasis-right) * -1px + var(--nod-right) * -0.8px),
+      calc(var(--talk-right) * -1.2px + var(--emphasis-right) * -1px + var(--nod-right) * -0.8px + var(--syllable-right) * -0.45px),
       0
     )
     rotate(calc(10deg + var(--sway-right) * 0.8deg + var(--tone-right) * 0.6deg))
-    scaleX(calc(0.82 + var(--talk-right) * 0.25 + var(--emphasis-right) * 0.15))
-    scaleY(calc(1 + var(--talk-right) * 1.8 + var(--energy-right) * 0.7 + var(--emphasis-right) * 0.9));
+    scaleX(calc(0.8 + var(--talk-right) * 0.18 + var(--emphasis-right) * 0.12 + var(--smile-right) * 0.32))
+    scaleY(calc(1 + var(--mouth-open-right) * 2.35 + var(--energy-right) * 0.48 + var(--syllable-right) * 0.72));
 }
 
 .signal {
