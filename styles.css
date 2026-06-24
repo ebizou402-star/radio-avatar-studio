@@ -28,6 +28,14 @@
   --nod-right: 0;
   --gesture-left: 0;
   --gesture-right: 0;
+  --whole-x-left: 0;
+  --whole-x-right: 0;
+  --whole-y-left: 0;
+  --whole-y-right: 0;
+  --whole-rotate-left: 0;
+  --whole-rotate-right: 0;
+  --chair-rock-left: 0;
+  --chair-rock-right: 0;
 }
 
 * {
@@ -154,10 +162,11 @@ button:disabled {
   transform-origin: 27% 67%;
   transform:
     translate3d(
-      calc(var(--talk) * -0.5px),
-      calc(var(--talk) * -0.7px + var(--energy-left) * -0.4px),
+      calc(var(--whole-x-left) * 1px + var(--talk) * -1.4px + var(--sway-left) * -1.8px),
+      calc(var(--whole-y-left) * 1px + var(--talk) * -1.4px + var(--energy-left) * -1.8px),
       0
-    );
+    )
+    rotate(calc(var(--whole-rotate-left) * 1deg));
   filter: none;
 }
 
@@ -169,16 +178,22 @@ button:disabled {
   transform-origin: 22% 59%;
   transform:
     translate3d(
-      calc(var(--talk-left) * -0.6px + var(--gesture-left) * -1.2px + var(--syllable-left) * -0.7px),
-      calc(var(--talk-left) * -0.8px + var(--gesture-left) * -1.8px + var(--emphasis-left) * -1px + var(--syllable-left) * -0.8px),
+      calc(var(--whole-x-left) * 1px + var(--talk-left) * -1px + var(--gesture-left) * -4.2px + var(--syllable-left) * -1.8px),
+      calc(var(--whole-y-left) * 1px + var(--talk-left) * -1.2px + var(--gesture-left) * -4.4px + var(--emphasis-left) * -2.2px + var(--syllable-left) * -1.8px),
       0
     )
-    rotate(calc(var(--talk-left) * -0.25deg + var(--gesture-left) * -1.5deg + var(--syllable-left) * -0.45deg));
+    rotate(calc(var(--whole-rotate-left) * 1deg + var(--talk-left) * -0.55deg + var(--gesture-left) * -4.2deg + var(--syllable-left) * -1.2deg));
 }
 
 .left-lap {
   transform-origin: 27% 79%;
-  transform: none;
+  transform:
+    translate3d(
+      calc(var(--whole-x-left) * 1px + var(--energy-left) * -1.2px),
+      calc(var(--whole-y-left) * 1px + var(--energy-left) * -0.7px),
+      0
+    )
+    rotate(calc(var(--whole-rotate-left) * 0.7deg + var(--chair-rock-left) * 1deg));
   filter: none;
 }
 
@@ -189,10 +204,11 @@ button:disabled {
   transform-origin: 72% 68%;
   transform:
     translate3d(
-      calc(var(--talk) * 0.5px),
-      calc(var(--talk) * -0.7px + var(--energy-right) * -0.4px),
+      calc(var(--whole-x-right) * 1px + var(--talk) * 1.4px + var(--sway-right) * 1.8px),
+      calc(var(--whole-y-right) * 1px + var(--talk) * -1.4px + var(--energy-right) * -1.8px),
       0
-    );
+    )
+    rotate(calc(var(--whole-rotate-right) * 1deg));
   filter: none;
 }
 
@@ -204,16 +220,22 @@ button:disabled {
   transform-origin: 79% 59%;
   transform:
     translate3d(
-      calc(var(--talk-right) * 0.6px + var(--gesture-right) * 1.2px + var(--syllable-right) * 0.7px),
-      calc(var(--talk-right) * -0.8px + var(--gesture-right) * -1.8px + var(--emphasis-right) * -1px + var(--syllable-right) * -0.8px),
+      calc(var(--whole-x-right) * 1px + var(--talk-right) * 1px + var(--gesture-right) * 4.2px + var(--syllable-right) * 1.8px),
+      calc(var(--whole-y-right) * 1px + var(--talk-right) * -1.2px + var(--gesture-right) * -4.4px + var(--emphasis-right) * -2.2px + var(--syllable-right) * -1.8px),
       0
     )
-    rotate(calc(var(--talk-right) * 0.25deg + var(--gesture-right) * 1.5deg + var(--syllable-right) * 0.45deg));
+    rotate(calc(var(--whole-rotate-right) * 1deg + var(--talk-right) * 0.55deg + var(--gesture-right) * 4.2deg + var(--syllable-right) * 1.2deg));
 }
 
 .right-lap {
   transform-origin: 75% 82%;
-  transform: none;
+  transform:
+    translate3d(
+      calc(var(--whole-x-right) * 1px + var(--energy-right) * 1.2px),
+      calc(var(--whole-y-right) * 1px + var(--energy-right) * -0.7px),
+      0
+    )
+    rotate(calc(var(--whole-rotate-right) * 0.7deg + var(--chair-rock-right) * 1deg));
   filter: none;
 }
 
@@ -222,11 +244,11 @@ button:disabled {
   transform-origin: 30% 43%;
   transform:
     translate3d(
-      calc(var(--talk) * -1px + var(--sway-left) * -1.2px + var(--tone-left) * -0.5px + var(--smile-left) * -0.35px),
-      calc(var(--talk) * -1.2px + var(--emphasis-left) * -1px + var(--nod-left) * -0.8px + var(--syllable-left) * -0.7px),
+      calc(var(--whole-x-left) * 1px + var(--talk) * -2.2px + var(--sway-left) * -4px + var(--tone-left) * -1.8px + var(--smile-left) * -0.9px),
+      calc(var(--whole-y-left) * 1px + var(--talk) * -2px + var(--emphasis-left) * -2.2px + var(--nod-left) * -2.6px + var(--syllable-left) * -1.8px),
       0
     )
-    rotate(calc(var(--talk) * -0.35deg + var(--sway-left) * -0.8deg + var(--tone-left) * -0.6deg + var(--syllable-left) * -0.35deg));
+    rotate(calc(var(--whole-rotate-left) * 1deg + var(--talk) * -0.8deg + var(--sway-left) * -2.2deg + var(--tone-left) * -1.4deg + var(--syllable-left) * -1deg));
   filter: none;
 }
 
@@ -235,11 +257,11 @@ button:disabled {
   transform-origin: 67% 42%;
   transform:
     translate3d(
-      calc(var(--talk) * 1px + var(--sway-right) * 1.2px + var(--tone-right) * 0.5px + var(--smile-right) * 0.35px),
-      calc(var(--talk) * -1.2px + var(--emphasis-right) * -1px + var(--nod-right) * -0.8px + var(--syllable-right) * -0.7px),
+      calc(var(--whole-x-right) * 1px + var(--talk) * 2.2px + var(--sway-right) * 4px + var(--tone-right) * 1.8px + var(--smile-right) * 0.9px),
+      calc(var(--whole-y-right) * 1px + var(--talk) * -2px + var(--emphasis-right) * -2.2px + var(--nod-right) * -2.6px + var(--syllable-right) * -1.8px),
       0
     )
-    rotate(calc(var(--talk) * 0.35deg + var(--sway-right) * 0.8deg + var(--tone-right) * 0.6deg + var(--syllable-right) * 0.35deg));
+    rotate(calc(var(--whole-rotate-right) * 1deg + var(--talk) * 0.8deg + var(--sway-right) * 2.2deg + var(--tone-right) * 1.4deg + var(--syllable-right) * 1deg));
   filter: none;
 }
 
@@ -260,13 +282,13 @@ button:disabled {
   width: 1.35%;
   transform:
     translate3d(
-      calc(var(--talk-left) * -1px + var(--sway-left) * -1.2px + var(--tone-left) * -0.5px),
-      calc(var(--talk-left) * -1.2px + var(--emphasis-left) * -1px + var(--nod-left) * -0.8px + var(--syllable-left) * -0.45px),
+      calc(var(--whole-x-left) * 1px + var(--talk-left) * -2.2px + var(--sway-left) * -4px + var(--tone-left) * -1.8px),
+      calc(var(--whole-y-left) * 1px + var(--talk-left) * -2px + var(--emphasis-left) * -2.2px + var(--nod-left) * -2.6px + var(--syllable-left) * -1.6px),
       0
     )
-    rotate(calc(-10deg + var(--sway-left) * -0.8deg + var(--tone-left) * -0.6deg))
-    scaleX(calc(0.8 + var(--talk-left) * 0.18 + var(--emphasis-left) * 0.12 + var(--smile-left) * 0.32))
-    scaleY(calc(1 + var(--mouth-open-left) * 2.35 + var(--energy-left) * 0.48 + var(--syllable-left) * 0.72));
+    rotate(calc(-10deg + var(--whole-rotate-left) * 1deg + var(--sway-left) * -2.2deg + var(--tone-left) * -1.4deg))
+    scaleX(calc(0.78 + var(--talk-left) * 0.2 + var(--emphasis-left) * 0.16 + var(--smile-left) * 0.46))
+    scaleY(calc(1 + var(--mouth-open-left) * 3.2 + var(--energy-left) * 0.7 + var(--syllable-left) * 1.2));
 }
 
 .mouth-right {
@@ -275,13 +297,13 @@ button:disabled {
   width: 1.35%;
   transform:
     translate3d(
-      calc(var(--talk-right) * 1px + var(--sway-right) * 1.2px + var(--tone-right) * 0.5px),
-      calc(var(--talk-right) * -1.2px + var(--emphasis-right) * -1px + var(--nod-right) * -0.8px + var(--syllable-right) * -0.45px),
+      calc(var(--whole-x-right) * 1px + var(--talk-right) * 2.2px + var(--sway-right) * 4px + var(--tone-right) * 1.8px),
+      calc(var(--whole-y-right) * 1px + var(--talk-right) * -2px + var(--emphasis-right) * -2.2px + var(--nod-right) * -2.6px + var(--syllable-right) * -1.6px),
       0
     )
-    rotate(calc(10deg + var(--sway-right) * 0.8deg + var(--tone-right) * 0.6deg))
-    scaleX(calc(0.8 + var(--talk-right) * 0.18 + var(--emphasis-right) * 0.12 + var(--smile-right) * 0.32))
-    scaleY(calc(1 + var(--mouth-open-right) * 2.35 + var(--energy-right) * 0.48 + var(--syllable-right) * 0.72));
+    rotate(calc(10deg + var(--whole-rotate-right) * 1deg + var(--sway-right) * 2.2deg + var(--tone-right) * 1.4deg))
+    scaleX(calc(0.78 + var(--talk-right) * 0.2 + var(--emphasis-right) * 0.16 + var(--smile-right) * 0.46))
+    scaleY(calc(1 + var(--mouth-open-right) * 3.2 + var(--energy-right) * 0.7 + var(--syllable-right) * 1.2));
 }
 
 .signal {

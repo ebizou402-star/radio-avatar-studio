@@ -1108,6 +1108,14 @@ function render(now) {
   const rightNod = clamp(((Math.sin(now / 230 + 0.8) + 1) / 2) * rightEnergy * 0.65 + rightEmphasis * 0.44 + rightSyllable * 0.26, 0, 1);
   const leftGesture = clamp(((Math.sin(now / 165) + 1) / 2) * leftEnergy * 0.54 + leftEmphasis * 0.72 + leftSyllable * 0.38, 0, 1);
   const rightGesture = clamp(((Math.sin(now / 180 + 1.1) + 1) / 2) * rightEnergy * 0.54 + rightEmphasis * 0.72 + rightSyllable * 0.38, 0, 1);
+  const leftWholeX = clamp(leftSway * -7.4 + leftTone * -3.8 + leftGesture * -1.8, -12, 7);
+  const rightWholeX = clamp(rightSway * 7.4 + rightTone * 3.8 + rightGesture * 1.8, -7, 12);
+  const leftWholeY = clamp(leftEnergy * -7.2 + leftSyllable * -5.4 + Math.sin(now / 140) * leftTalk * 2.2, -15, 2);
+  const rightWholeY = clamp(rightEnergy * -7.2 + rightSyllable * -5.4 + Math.sin(now / 150 + 1.2) * rightTalk * 2.2, -15, 2);
+  const leftWholeRotate = clamp(leftSway * -2.7 + leftEmphasis * -1.2 + leftSyllable * -0.85, -5.2, 4.2);
+  const rightWholeRotate = clamp(rightSway * 2.7 + rightEmphasis * 1.2 + rightSyllable * 0.85, -4.2, 5.2);
+  const leftChairRock = clamp(leftWholeRotate * 0.7 + Math.sin(now / 170) * leftEnergy * 2.1, -4.8, 4.8);
+  const rightChairRock = clamp(rightWholeRotate * 0.7 + Math.sin(now / 180 + 1.1) * rightEnergy * 2.1, -4.8, 4.8);
 
   root.style.setProperty("--talk-left", leftTalk.toFixed(3));
   root.style.setProperty("--talk-right", rightTalk.toFixed(3));
@@ -1129,6 +1137,14 @@ function render(now) {
   root.style.setProperty("--nod-right", rightNod.toFixed(3));
   root.style.setProperty("--gesture-left", leftGesture.toFixed(3));
   root.style.setProperty("--gesture-right", rightGesture.toFixed(3));
+  root.style.setProperty("--whole-x-left", leftWholeX.toFixed(3));
+  root.style.setProperty("--whole-x-right", rightWholeX.toFixed(3));
+  root.style.setProperty("--whole-y-left", leftWholeY.toFixed(3));
+  root.style.setProperty("--whole-y-right", rightWholeY.toFixed(3));
+  root.style.setProperty("--whole-rotate-left", leftWholeRotate.toFixed(3));
+  root.style.setProperty("--whole-rotate-right", rightWholeRotate.toFixed(3));
+  root.style.setProperty("--chair-rock-left", leftChairRock.toFixed(3));
+  root.style.setProperty("--chair-rock-right", rightChairRock.toFixed(3));
   els.mouthLeft.style.opacity = String(0.04 + leftMouthOpen * 0.5 + leftEnergy * 0.16 + leftSmile * 0.16);
   els.mouthRight.style.opacity = String(0.04 + rightMouthOpen * 0.5 + rightEnergy * 0.16 + rightSmile * 0.16);
   els.signalLeft.style.opacity = String(leftTalk * 0.85);
